@@ -190,7 +190,7 @@ def power_test_reset_operation(sut: SystemUnderTest, systems: list, reset_capabi
 
     test_name = TEST_RESET_OPERATION[0]
     logger.log_use_case_test_header(CAT_NAME, test_name)
-    reset_types = ["On", "ForceOn", "ForceOff", "ForceRestart", "PowerCycle"]
+    reset_types = ["ForceOff", "ForceRestart", "PowerCycle", "On", "ForceOn"]
 
     # Test each reset type
     for reset_type in reset_types:
