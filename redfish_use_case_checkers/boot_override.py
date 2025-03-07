@@ -227,17 +227,27 @@ def boot_test_boot_check(sut: SystemUnderTest, systems: list):
         # Cache the allowable boot parameters
         # If the allowable values term is not present, assume it supports PXE, Continuous, and Once
         boot_params = {}
-        boot_params["PXE"] = system["Boot"].get("BootSourceOverrideTarget@Redfish.AllowableValues", ["Pxe"])
-        boot_params["USB"] = system["Boot"].get("BootSourceOverrideTarget@Redfish.AllowableValues", [])
-        boot_params["Continuous"] = system["Boot"].get(
-            "BootSourceOverrideEnabled@Redfish.AllowableValues", ["Continuous"]
+        boot_params["PXE"] = (
+            True if "Pxe" in system["Boot"].get("BootSourceOverrideTarget@Redfish.AllowableValues", ["Pxe"]) else False
         )
-        boot_params["Once"] = system["Boot"].get("BootSourceOverrideEnabled@Redfish.AllowableValues", ["Once"])
+        boot_params["USB"] = (
+            True if "USB" in system["Boot"].get("BootSourceOverrideTarget@Redfish.AllowableValues", []) else False
+        )
+        boot_params["Continuous"] = (
+            True
+            if "Continuous" in system["Boot"].get("BootSourceOverrideEnabled@Redfish.AllowableValues", ["Continuous"])
+            else False
+        )
+        boot_params["Once"] = (
+            True
+            if "Once" in system["Boot"].get("BootSourceOverrideEnabled@Redfish.AllowableValues", ["Once"])
+            else False
+        )
         boot_override_params.append(boot_params)
 
         # Check if the boot object contains other properties as needed by the allowable boot override targets
-        boot_override_targets = ["UefiTarget", "UefiHttp", "UefiBootNext"]
-        boot_override_properties = ["UefiTargetBootSourceOverride", "HttpBootUri", "BootNext"]
+        boot_override_targets = ["UefiTarget", "UefiBootNext"]
+        boot_override_properties = ["UefiTargetBootSourceOverride", "BootNext"]
         for target, prop in zip(boot_override_targets, boot_override_properties):
             operation = "Checking that the 'Boot' property in system '{}' contains the '{}' property".format(
                 system["Id"], target
@@ -355,7 +365,6 @@ def boot_test_continuous_boot_settings(sut: SystemUnderTest, systems: list, boot
                     operation,
                     "FAIL",
                     "'Boot' property contains '{}'/'{}' instead of '{}'/'{}' after PATCH operation.".format(
-                        system["Id"],
                         boot_obj["BootSourceOverrideTarget"],
                         boot_obj["BootSourceOverrideEnabled"],
                         boot_path,
@@ -455,7 +464,6 @@ def boot_test_one_time_boot_settings(sut: SystemUnderTest, systems: list, boot_o
                     operation,
                     "FAIL",
                     "'Boot' property contains '{}'/'{}' instead of '{}'/'{}' after PATCH operation.".format(
-                        system["Id"],
                         boot_obj["BootSourceOverrideTarget"],
                         boot_obj["BootSourceOverrideEnabled"],
                         boot_path,
@@ -629,7 +637,6 @@ def boot_test_disable_boot_settings(sut: SystemUnderTest, systems: list, boot_ov
                     operation,
                     "FAIL",
                     "'Boot' property contains '{}'/'{}' instead of '{}'/'{}' after PATCH operation.".format(
-                        system["Id"],
                         boot_obj["BootSourceOverrideTarget"],
                         boot_obj["BootSourceOverrideEnabled"],
                         boot_path,

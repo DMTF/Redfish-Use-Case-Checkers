@@ -189,18 +189,18 @@ def acc_test_add_user(sut: SystemUnderTest, username: str):
         sut.add_test_result(
             CAT_NAME, test_name, operation, "FAIL", "Failed to create user '{}' ({}).".format(username, last_error)
         )
-
-    # Get the list of current users to verify the new user was added
-    if verify_user(sut.session, username, role="Administrator"):
-        sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
     else:
-        sut.add_test_result(
-            CAT_NAME,
-            test_name,
-            operation,
-            "FAIL",
-            "Failed to find user '{}' with the role 'Administrator' after successful POST.".format(username),
-        )
+        # Get the list of current users to verify the new user was added
+        if verify_user(sut.session, username, role="Administrator"):
+            sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
+        else:
+            sut.add_test_result(
+                CAT_NAME,
+                test_name,
+                operation,
+                "FAIL",
+                "Failed to find user '{}' with the role 'Administrator' after successful POST.".format(username),
+            )
 
     logger.log_use_case_test_footer(CAT_NAME, test_name)
     return user_added, test_password
@@ -293,10 +293,15 @@ def acc_test_credential_check(sut: SystemUnderTest, user_added: bool, username: 
         test_obj.login(auth="session")
         test_list = redfish_utilities.get_users(test_obj)
         sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
-    except:
-        sut.add_test_result(CAT_NAME, test_name, operation, "FAIL", "Failed to login with user '{}'.".format(username))
+    except Exception as err:
+        sut.add_test_result(
+            CAT_NAME, test_name, operation, "FAIL", "Failed to login with user '{}' ({}).".format(username, err)
+        )
     finally:
-        test_obj.logout()
+        try:
+            test_obj.logout()
+        except:
+            pass
 
     # Log in with the new user, but with bad credentials
     operation = "Logging in as '{}', but with the incorrect password".format(username)
@@ -315,7 +320,10 @@ def acc_test_credential_check(sut: SystemUnderTest, user_added: bool, username: 
     except:
         sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
     finally:
-        test_obj.logout()
+        try:
+            test_obj.logout()
+        except:
+            pass
 
     logger.log_use_case_test_footer(CAT_NAME, test_name)
 
