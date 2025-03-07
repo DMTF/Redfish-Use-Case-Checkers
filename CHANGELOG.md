@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.1] - 2025-03-07
+- Added exception handling when performing logout operations with test user accounts to prevent the tool from crashing
+- Fixed error messages when verifying boot override settings
+- Fixed test account creation to skip verification if the account creation fails
+- Corrected tracking of supported boot parameters, which is used to dictate boot override test sequences
+- Changed power/reset testing to use 'On' and 'ForceOn' as the final tests to have systems powered on when testing completes
+
 ## [2.0.0] - 2025-02-14
 - Rewrote the tool to wrap all testing into a single process and produce a singular HTML report
 
