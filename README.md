@@ -38,9 +38,10 @@ If installing from GitHub, you may install the external packages by running:
 ## Usage
 
 ```
-usage: rf_use_case_checkers [-h] --user USER --password PASSWORD --rhost RHOST
-                            [--report-dir REPORT_DIR] [--relaxed]
-                            [--debugging]
+usage: rf_use_case_checkers.py [-h] --user USER --password PASSWORD --rhost
+                               RHOST [--report-dir REPORT_DIR] [--relaxed]
+                               [--test-list [{AccountManagement,PowerControl,BootOverride,ManagerEthernetInterfaces} ...]]
+                               [--debugging]
 
 Validate Redfish services against use cases
 
@@ -52,11 +53,14 @@ options:
   --rhost RHOST, -r RHOST
                         The address of the Redfish service (with scheme)
   --report-dir REPORT_DIR
-                        the directory for generated report files (default:
+                        The directory for generated report files (default:
                         'reports')
   --relaxed             Allows for some failures to be logged as warnings;
                         useful if the criteria is to meet the literal 'shall'
                         statements in the specification.
+  --test-list [{AccountManagement,PowerControl,BootOverride,ManagerEthernetInterfaces} ...]
+                        Selects specific tests to perform instead of running
+                        the entire test suite.
   --debugging           Controls the verbosity of the debugging output; if not
                         specified only INFO and higher are logged.
 ```

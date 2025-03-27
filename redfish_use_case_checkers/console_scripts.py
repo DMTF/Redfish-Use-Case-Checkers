@@ -46,12 +46,18 @@ def main():
         "--report-dir",
         type=str,
         default="reports",
-        help="the directory for generated report files (default: 'reports')",
+        help="The directory for generated report files (default: 'reports')",
     )
     argget.add_argument(
         "--relaxed",
         action="store_true",
         help="Allows for some failures to be logged as warnings; useful if the criteria is to meet the literal 'shall' statements in the specification.",
+    )
+    argget.add_argument(
+        "--test-list",
+        nargs="*",
+        choices=["AccountManagement", "PowerControl", "BootOverride", "ManagerEthernetInterfaces"],
+        help="Selects specific tests to perform instead of running the entire test suite."
     )
     argget.add_argument(
         "--debugging",
@@ -86,10 +92,14 @@ def main():
     sut = SystemUnderTest(args.rhost, args.user, args.password, args.relaxed)
 
     # Run the tests
-    account_management.use_cases(sut)
-    power_control.use_cases(sut)
-    boot_override.use_cases(sut)
-    manager_ethernet_interfaces.use_cases(sut)
+    if args.test_list is None or "AccountManagement" in args.test_list:
+        account_management.use_cases(sut)
+    if args.test_list is None or "PowerControl" in args.test_list:
+        power_control.use_cases(sut)
+    if args.test_list is None or "BootOverride" in args.test_list:
+        boot_override.use_cases(sut)
+    if args.test_list is None or "ManagerEthernetInterfaces" in args.test_list:
+        manager_ethernet_interfaces.use_cases(sut)
 
     # Log out
     sut.logout()
