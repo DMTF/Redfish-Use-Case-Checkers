@@ -27,7 +27,7 @@ from redfish_use_case_checkers import manager_ethernet_interfaces
 from redfish_use_case_checkers import power_control
 from redfish_use_case_checkers import report
 
-tool_version = "2.0.1"
+tool_version = "2.0.2"
 
 
 def main():

@@ -1,5 +1,8 @@
 # Change Log
 
+## [2.0.2] - 2025-03-28
+- Added '--test-list' option to control which sets of tests are performed
+
 ## [2.0.1] - 2025-03-07
 - Added exception handling when performing logout operations with test user accounts to prevent the tool from crashing
 - Fixed error messages when verifying boot override settings
