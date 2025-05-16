@@ -377,6 +377,10 @@ def mgr_eth_int_test_addresses_check(sut: SystemUnderTest, eth_ints: dict):
                         logger.logger.info(operation)
                         gateway_pass = True
                         for i, address in enumerate(eth_int[prop]):
+                            if address is None:
+                                # Static addresses can have null values
+                                # Other tests in place for ensuring null is used correctly
+                                continue
                             if "Gateway" in address and i != 0:
                                 sut.add_test_result(
                                     CAT_NAME,
@@ -418,6 +422,10 @@ def mgr_eth_int_test_addresses_check(sut: SystemUnderTest, eth_ints: dict):
                             expected_properties.append("AddressState")
                     exp_pass = True
                     for i, address in enumerate(eth_int[prop]):
+                        if address is None:
+                            # Static addresses can have null values
+                            # Other tests in place for ensuring null is used correctly
+                            continue
                         for exp_prop in expected_properties:
                             if exp_prop not in address:
                                 sut.add_test_result(
