@@ -79,6 +79,9 @@ def use_cases(sut: SystemUnderTest):
         logger.log_use_case_category_footer(CAT_NAME)
         return
 
+    # Let tasks for account operations be handled internally
+    redfish_utilities.config.__auto_task_handling__ = True
+
     # Go through the test cases
     test_username = acc_test_user_count(sut)
     user_added, test_password = acc_test_add_user(sut, test_username)

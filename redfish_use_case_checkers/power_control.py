@@ -233,7 +233,7 @@ def power_test_reset_operation(sut: SystemUnderTest, systems: list, reset_capabi
             reset_success[system["Id"]] = False
             try:
                 response = redfish_utilities.system_reset(sut.session, system["Id"], reset_type)
-                response = redfish_utilities.poll_task_monitor(sut.session, response)
+                response = redfish_utilities.poll_task_monitor(sut.session, response, silent=True)
                 redfish_utilities.verify_response(response)
                 sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
                 reset_success[system["Id"]] = True
