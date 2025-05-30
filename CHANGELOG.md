@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.0.3] - 2025-05-30
+- Increased the boot override test time to allow for up to 10 minutes for a system to reset and boot to the new device
+- Added support for leveraging new automated task monitoring in Redfish Tacklebox for account tests
+- Added support to use a non-zero exit code when there are failures
+
 ## [2.0.2] - 2025-03-28
 - Added '--test-list' option to control which sets of tests are performed
 
