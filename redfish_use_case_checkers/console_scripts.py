@@ -109,6 +109,9 @@ def main():
     print("HTML Report: {}".format(results_file))
     print("Debug Log: {}".format(log_file))
 
+    # Exit with status 1 if there are any failures; 0 otherwise
+    sys.exit(int(sut.fail_count > 0))
+
 
 def summary_format(result, result_count):
     """

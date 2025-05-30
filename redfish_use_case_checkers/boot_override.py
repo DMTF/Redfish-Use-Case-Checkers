@@ -526,7 +526,7 @@ def boot_test_one_time_boot_check(sut: SystemUnderTest, systems: list, check_sys
         reset_success = False
         try:
             response = redfish_utilities.system_reset(sut.session, system["Id"])
-            response = redfish_utilities.poll_task_monitor(sut.session, response)
+            response = redfish_utilities.poll_task_monitor(sut.session, response, silent=True)
             redfish_utilities.verify_response(response)
             sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
             reset_success = True
@@ -544,8 +544,8 @@ def boot_test_one_time_boot_check(sut: SystemUnderTest, systems: list, check_sys
         logger.logger.info(operation)
         if reset_success:
             try:
-                # Poll the boot object for up to 300 seconds
-                for i in range(0, 30):
+                # Poll the boot object for up to 600 seconds
+                for i in range(0, 60):
                     logger.logger.debug("Monitoring check {}".format(i))
                     time.sleep(10)
                     boot_obj = redfish_utilities.get_system_boot(sut.session, system["Id"])
