@@ -1,5 +1,8 @@
 # Change Log
 
+## [2.0.4] - 2025-07-25
+- Made change to 'Change Role' test to allow for a service to not support this capability
+
 ## [2.0.3] - 2025-05-30
 - Increased the boot override test time to allow for up to 10 minutes for a system to reset and boot to the new device
 - Added support for leveraging new automated task monitoring in Redfish Tacklebox for account tests
