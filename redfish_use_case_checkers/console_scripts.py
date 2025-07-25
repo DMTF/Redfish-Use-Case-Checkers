@@ -57,7 +57,7 @@ def main():
         "--test-list",
         nargs="*",
         choices=["AccountManagement", "PowerControl", "BootOverride", "ManagerEthernetInterfaces"],
-        help="Selects specific tests to perform instead of running the entire test suite."
+        help="Selects specific tests to perform instead of running the entire test suite.",
     )
     argget.add_argument(
         "--debugging",

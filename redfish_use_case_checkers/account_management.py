@@ -12,6 +12,7 @@ Brief : This file contains the definitions and functionalities for testing
 """
 
 import logging
+import re
 import redfish
 import redfish_utilities
 
@@ -374,13 +375,20 @@ def acc_test_change_role(sut: SystemUnderTest, user_added: bool, username: str):
                     "Failed to find user '{}' with the role '{}' after successful PATCH.".format(username, role),
                 )
         except Exception as err:
-            sut.add_test_result(
-                CAT_NAME,
-                test_name,
-                operation,
-                "FAIL",
-                "Failed to set user '{}' to '{}' ({}).".format(username, role, err),
-            )
+            http_bad_request = re.search("HTTP 400", str(err))
+            not_writable = re.search("Base\\.1\\.\\d+.PropertyNotWritable", str(err))
+            if http_bad_request and not_writable:
+                sut.add_test_result(
+                    CAT_NAME, test_name, operation, "SKIP", "Service does not support modifying 'RoleId'."
+                )
+            else:
+                sut.add_test_result(
+                    CAT_NAME,
+                    test_name,
+                    operation,
+                    "FAIL",
+                    "Failed to set user '{}' to '{}' ({}).".format(username, role, err),
+                )
 
     logger.log_use_case_test_footer(CAT_NAME, test_name)
 
