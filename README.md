@@ -40,7 +40,7 @@ If installing from GitHub, you may install the external packages by running:
 ```
 usage: rf_use_case_checkers.py [-h] --user USER --password PASSWORD --rhost
                                RHOST [--report-dir REPORT_DIR] [--relaxed]
-                               [--test-list [{AccountManagement,PowerControl,BootOverride,ManagerEthernetInterfaces} ...]]
+                               [--test-list [{AccountManagement,PowerControl,BootOverride,ManagerEthernetInterfaces,QueryParameters} ...]]
                                [--debugging]
 
 Validate Redfish services against use cases
@@ -58,7 +58,7 @@ options:
   --relaxed             Allows for some failures to be logged as warnings;
                         useful if the criteria is to meet the literal 'shall'
                         statements in the specification.
-  --test-list [{AccountManagement,PowerControl,BootOverride,ManagerEthernetInterfaces} ...]
+  --test-list [{AccountManagement,PowerControl,BootOverride,ManagerEthernetInterfaces,QueryParameters} ...]
                         Selects specific tests to perform instead of running
                         the entire test suite.
   --debugging           Controls the verbosity of the debugging output; if not

@@ -25,6 +25,7 @@ from redfish_use_case_checkers import boot_override
 from redfish_use_case_checkers import logger
 from redfish_use_case_checkers import manager_ethernet_interfaces
 from redfish_use_case_checkers import power_control
+from redfish_use_case_checkers import query_parameters
 from redfish_use_case_checkers import report
 
 tool_version = "2.0.4"
@@ -56,7 +57,7 @@ def main():
     argget.add_argument(
         "--test-list",
         nargs="*",
-        choices=["AccountManagement", "PowerControl", "BootOverride", "ManagerEthernetInterfaces"],
+        choices=["AccountManagement", "PowerControl", "BootOverride", "ManagerEthernetInterfaces", "QueryParameters"],
         help="Selects specific tests to perform instead of running the entire test suite.",
     )
     argget.add_argument(
@@ -100,6 +101,8 @@ def main():
         boot_override.use_cases(sut)
     if args.test_list is None or "ManagerEthernetInterfaces" in args.test_list:
         manager_ethernet_interfaces.use_cases(sut)
+    if args.test_list is None or "QueryParameters" in args.test_list:
+        query_parameters.use_cases(sut)
 
     # Log out
     sut.logout()
