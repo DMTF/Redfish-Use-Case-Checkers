@@ -1,5 +1,8 @@
 # Change Log
 
+## [2.0.5] - 2025-08-15
+- Added query parameter testing
+
 ## [2.0.4] - 2025-07-25
 - Made change to 'Change Role' test to allow for a service to not support this capability
 

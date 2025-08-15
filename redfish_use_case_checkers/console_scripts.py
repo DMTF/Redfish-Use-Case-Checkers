@@ -28,7 +28,7 @@ from redfish_use_case_checkers import power_control
 from redfish_use_case_checkers import query_parameters
 from redfish_use_case_checkers import report
 
-tool_version = "2.0.4"
+tool_version = "2.0.5"
 
 
 def main():
