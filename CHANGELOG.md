@@ -1,5 +1,8 @@
 # Change Log
 
+## [2.0.6] - 2025-09-12
+- Added test to clear the password change required flag on a user
+
 ## [2.0.5] - 2025-08-15
 - Added query parameter testing
 
