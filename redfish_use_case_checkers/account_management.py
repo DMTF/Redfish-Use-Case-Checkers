@@ -35,6 +35,11 @@ TEST_ENABLE_USER = (
     "Verifies that a user can be enabled",
     "Performs a PATCH operation on the ManagerAccount resource to enable the new user.  Performs a GET on the ManagerAccount resource and verifies the user account was enabled.",
 )
+TEST_DIS_PASS_CHNG_REQ = (
+    "Disable Password Change Required",
+    "Verifies that password change required can be disabled",
+    "Performs a PATCH operation on the ManagerAccount resource to disable the password change required flag.  Performs a GET on the ManagerAccount resource and verifies the user account no longer needs to change their password.",
+)
 TEST_CREDENTIAL_CHECK = (
     "Credential Check",
     "Verifies the credentials of the new user are correctly enforced",
@@ -54,6 +59,7 @@ TEST_LIST = [
     TEST_USER_COUNT,
     TEST_ADD_USER,
     TEST_ENABLE_USER,
+    TEST_DIS_PASS_CHNG_REQ,
     TEST_CREDENTIAL_CHECK,
     TEST_CHANGE_ROLE,
     TEST_DELETE_USER,
@@ -87,13 +93,14 @@ def use_cases(sut: SystemUnderTest):
     test_username = acc_test_user_count(sut)
     user_added, test_password = acc_test_add_user(sut, test_username)
     acc_test_enable_user(sut, user_added, test_username)
+    acc_test_dis_pass_chng_req(sut, user_added, test_username)
     acc_test_credential_check(sut, user_added, test_username, test_password)
     acc_test_change_role(sut, user_added, test_username)
     acc_test_delete_user(sut, user_added, test_username)
     logger.log_use_case_category_footer(CAT_NAME)
 
 
-def verify_user(context, username, role=None, enabled=None):
+def verify_user(context, username, role=None, enabled=None, pass_chng_req=None):
     """
     Checks that a given user is in the user list with a certain role
 
@@ -102,6 +109,7 @@ def verify_user(context, username, role=None, enabled=None):
         username: The name of the user to check
         role: The role for the user
         enabled: The enabled state for the user
+        pass_chng_req: The password change required state for the user
 
     Returns:
         True if a match is found, false otherwise
@@ -112,6 +120,8 @@ def verify_user(context, username, role=None, enabled=None):
             if role is not None and user["RoleId"] != role:
                 return False
             if enabled is not None and user["Enabled"] != enabled:
+                return False
+            if pass_chng_req is not None and user["PasswordChangeRequired"] != pass_chng_req:
                 return False
             return True
 
@@ -258,6 +268,63 @@ def acc_test_enable_user(sut: SystemUnderTest, user_added: bool, username: str):
     except Exception as err:
         sut.add_test_result(
             CAT_NAME, test_name, operation, "FAIL", "Failed to enable user '{}' ({}).".format(username, err)
+        )
+
+    logger.log_use_case_test_footer(CAT_NAME, test_name)
+
+
+def acc_test_dis_pass_chng_req(sut: SystemUnderTest, user_added: bool, username: str):
+    """
+    Performs the disable password change required test
+
+    Args:
+        sut: The system under test
+        user_added: Indicates if the test user was added
+        username: The username for testing
+    """
+
+    test_name = TEST_DIS_PASS_CHNG_REQ[0]
+    logger.log_use_case_test_header(CAT_NAME, test_name)
+
+    # Skip the test if the test user was not added
+    if not user_added:
+        sut.add_test_result(
+            CAT_NAME,
+            test_name,
+            "",
+            "SKIP",
+            "Failure of the '{}' test prevents performing this test.".format(TEST_ADD_USER[0]),
+        )
+        logger.log_use_case_test_footer(CAT_NAME, test_name)
+        return
+
+    # Check if password change required needs to be disabled
+    operation = "Disabling password change required for user '{}'".format(username)
+    logger.logger.info(operation)
+    try:
+        if verify_user(sut.session, username, pass_chng_req=True):
+            redfish_utilities.modify_user(sut.session, username, new_pass_chng_req=False)
+            if verify_user(sut.session, username, pass_chng_req=False):
+                sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
+            else:
+                sut.add_test_result(
+                    CAT_NAME,
+                    test_name,
+                    operation,
+                    "FAIL",
+                    "User '{}' requires a password change after successful PATCH.".format(username),
+                )
+        else:
+            sut.add_test_result(
+                CAT_NAME, test_name, operation, "SKIP", "User '{}' does not require a password change.".format(username)
+            )
+    except Exception as err:
+        sut.add_test_result(
+            CAT_NAME,
+            test_name,
+            operation,
+            "FAIL",
+            "Failed to disable password change required for user '{}' ({}).".format(username, err),
         )
 
     logger.log_use_case_test_footer(CAT_NAME, test_name)
