@@ -93,7 +93,7 @@ def use_cases(sut: SystemUnderTest):
     test_username = acc_test_user_count(sut)
     user_added, test_password = acc_test_add_user(sut, test_username)
     acc_test_enable_user(sut, user_added, test_username)
-    acc_test_dis_pass_chng_req(sut, user_added, test_username)
+    test_password = acc_test_dis_pass_chng_req(sut, user_added, test_username, test_password)
     acc_test_credential_check(sut, user_added, test_username, test_password)
     acc_test_change_role(sut, user_added, test_username)
     acc_test_delete_user(sut, user_added, test_username)
@@ -190,10 +190,9 @@ def acc_test_add_user(sut: SystemUnderTest, username: str):
     last_error = ""
     operation = "Creating new user '{}' as 'Administrator'".format(username)
     logger.logger.info(operation)
-    for x in range(3):
+    for test_password in test_passwords:
         # Try different passwords in case there are password requirements that we cannot detect
         try:
-            test_password = test_passwords[x]
             redfish_utilities.add_user(sut.session, username, test_password, "Administrator")
             user_added = True
             break
@@ -273,7 +272,7 @@ def acc_test_enable_user(sut: SystemUnderTest, user_added: bool, username: str):
     logger.log_use_case_test_footer(CAT_NAME, test_name)
 
 
-def acc_test_dis_pass_chng_req(sut: SystemUnderTest, user_added: bool, username: str):
+def acc_test_dis_pass_chng_req(sut: SystemUnderTest, user_added: bool, username: str, password: str):
     """
     Performs the disable password change required test
 
@@ -281,10 +280,16 @@ def acc_test_dis_pass_chng_req(sut: SystemUnderTest, user_added: bool, username:
         sut: The system under test
         user_added: Indicates if the test user was added
         username: The username for testing
+        password: The current password for testing
+
+    Returns:
+        The new password for testing
     """
 
     test_name = TEST_DIS_PASS_CHNG_REQ[0]
     logger.log_use_case_test_header(CAT_NAME, test_name)
+    test_passwords = ["lUBga9Z9", "8jBl6zq.kd0Fcl", "q9Rjev7*n0opvcS!m0kmMGH69!"]
+    user_modified = False
 
     # Skip the test if the test user was not added
     if not user_added:
@@ -296,14 +301,31 @@ def acc_test_dis_pass_chng_req(sut: SystemUnderTest, user_added: bool, username:
             "Failure of the '{}' test prevents performing this test.".format(TEST_ADD_USER[0]),
         )
         logger.log_use_case_test_footer(CAT_NAME, test_name)
-        return
+        return password
 
     # Check if password change required needs to be disabled
-    operation = "Disabling password change required for user '{}'".format(username)
+    operation = "Disabling password change required for user '{}' by modifying their password".format(username)
     logger.logger.info(operation)
     try:
         if verify_user(sut.session, username, pass_chng_req=True):
-            redfish_utilities.modify_user(sut.session, username, new_pass_chng_req=False)
+            last_error = ""
+            for test_password in test_passwords:
+                # Try different passwords in case there are password requirements that we cannot detect
+                try:
+                    redfish_utilities.modify_user(sut.session, username, new_password=test_password)
+                    user_modified = True
+                    password = test_password
+                    break
+                except Exception as err:
+                    last_error = err
+                if not user_modified:
+                    sut.add_test_result(
+                        CAT_NAME,
+                        test_name,
+                        operation,
+                        "FAIL",
+                        "Failed to modify the password for user '{}' ({}).".format(username, last_error),
+                    )
             if verify_user(sut.session, username, pass_chng_req=False):
                 sut.add_test_result(CAT_NAME, test_name, operation, "PASS")
             else:
@@ -328,6 +350,7 @@ def acc_test_dis_pass_chng_req(sut: SystemUnderTest, user_added: bool, username:
         )
 
     logger.log_use_case_test_footer(CAT_NAME, test_name)
+    return password
 
 
 def acc_test_credential_check(sut: SystemUnderTest, user_added: bool, username: str, password: str):
