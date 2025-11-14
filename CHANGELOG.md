@@ -1,5 +1,8 @@
 # Change Log
 
+## [2.0.7] - 2025-11-14
+- Modified 'password change required' testing to PATCH a user's password
+
 ## [2.0.6] - 2025-09-12
 - Added test to clear the password change required flag on a user
 
