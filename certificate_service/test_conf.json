@@ -1,0 +1,5 @@
+{
+  "test": {
+    "command": "$interpreter certificate_service.py -r $target_system -u $username -p $password -S $https -d $output_subdir"
+  }
+}
