@@ -282,7 +282,7 @@ def html_report(sut: SystemUnderTest, report_dir, time, tool_version, args=None)
         sec_pass = sum(1 for t in test_category["Tests"] for r in t["Results"] if r["Result"] == "PASS")
         sec_warn = sum(1 for t in test_category["Tests"] for r in t["Results"] if r["Result"] == "WARN")
         sec_fail = sum(1 for t in test_category["Tests"] for r in t["Results"] if r["Result"] == "FAIL")
-        sec_skip = sum(1 for t in test_category["Tests"] for r in t["Results"] if not r["Result"])
+        sec_skip = sum(1 for t in test_category["Tests"] for r in t["Results"] if r["Result"] == "SKIP")
         sec_cnt = '<div class="section-counts">'
         if sec_pass: sec_cnt += '<span class="scnt scnt-pass">&#10003;&nbsp;{}</span>'.format(sec_pass)
         if sec_warn: sec_cnt += '<span class="scnt scnt-warn">&#9888;&nbsp;{}</span>'.format(sec_warn)
@@ -317,12 +317,12 @@ def html_report(sut: SystemUnderTest, report_dir, time, tool_version, args=None)
             t_pass = sum(1 for _r in test["Results"] if _r["Result"] == "PASS")
             t_warn = sum(1 for _r in test["Results"] if _r["Result"] == "WARN")
             t_fail = sum(1 for _r in test["Results"] if _r["Result"] == "FAIL")
-            t_skip = sum(1 for _r in test["Results"] if not _r["Result"])
+            t_skip = sum(1 for _r in test["Results"] if _r["Result"] == "SKIP")
             html += '<div class="result-chips">'
             if t_pass: html += '<span class="rchip rchip-pass">&#10003; {} Pass</span>'.format(t_pass)
             if t_warn: html += '<span class="rchip rchip-warn">&#9888; {} Warn</span>'.format(t_warn)
             if t_fail: html += '<span class="rchip rchip-fail">&#10007; {} Fail</span>'.format(t_fail)
-            if t_skip: html += '<span class="rchip rchip-skip">&ndash; {} N/A</span>'.format(t_skip)
+            if t_skip: html += '<span class="rchip rchip-skip">&ndash; {} Not Tested</span>'.format(t_skip)
             html += '</div>'
             html += '</div>'  # test-heading-info
             html += '<span class="test-toggle">&#9660;</span>'
