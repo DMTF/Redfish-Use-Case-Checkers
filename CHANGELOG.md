@@ -1,5 +1,8 @@
 # Change Log
 
+## [2.1.1] - 2026-10-03
+- Corrected 'Not Tested' indication in section headers of the HTML report
+
 ## [2.1.0] - 2026-07-10
 - Refactored HTML reports to leverage centralized templates
 
