@@ -13,11 +13,11 @@ Brief : This file contains the definitions and functionalities for testing
 
 import logging
 import re
-import redfish
 import redfish_utilities
 
 from redfish_use_case_checkers.system_under_test import SystemUnderTest
 from redfish_use_case_checkers import logger
+from redfish_use_case_checkers.sub_use_cases import account_management_roles
 
 CAT_NAME = "Account Management"
 TEST_USER_COUNT = (
@@ -55,6 +55,11 @@ TEST_DELETE_USER = (
     "Verifies that a user can be deleted",
     "Performs a DELETE operation on the ManagerAccount resource of the new account.  Reads the members of the ManagerAccountCollection resource and verifies the user was deleted.",
 )
+TEST_ROLE_ASSIGNED_PRIVILEGES = (
+    "Role Assigned Privileges",
+    "Verifies the assigned privileges of the predefined roles",
+    "Reads the RoleCollection and verifies the AssignedPrivileges values for the Administrator, Operator, and ReadOnly roles.",
+)
 TEST_LIST = [
     TEST_USER_COUNT,
     TEST_ADD_USER,
@@ -63,6 +68,7 @@ TEST_LIST = [
     TEST_CREDENTIAL_CHECK,
     TEST_CHANGE_ROLE,
     TEST_DELETE_USER,
+    TEST_ROLE_ASSIGNED_PRIVILEGES,
 ]
 
 
@@ -97,7 +103,17 @@ def use_cases(sut: SystemUnderTest):
     acc_test_credential_check(sut, user_added, test_username, test_password)
     acc_test_change_role(sut, user_added, test_username)
     acc_test_delete_user(sut, user_added, test_username)
+    acc_test_role_assigned_privileges(sut)
     logger.log_use_case_category_footer(CAT_NAME)
+
+
+def acc_test_role_assigned_privileges(sut: SystemUnderTest):
+    """Performs the predefined role assigned-privileges test."""
+
+    test_name = TEST_ROLE_ASSIGNED_PRIVILEGES[0]
+    logger.log_use_case_test_header(CAT_NAME, test_name)
+    account_management_roles.check_assigned_privileges(sut, CAT_NAME, test_name)
+    logger.log_use_case_test_footer(CAT_NAME, test_name)
 
 
 def verify_user(context, username, role=None, enabled=None, pass_chng_req=None):
@@ -382,7 +398,7 @@ def acc_test_credential_check(sut: SystemUnderTest, user_added: bool, username: 
     # Log in with the new user
     operation = "Logging in as '{}' with the correct password".format(username)
     logger.logger.info(operation)
-    test_obj = redfish.redfish_client(base_url=sut.rhost, username=username, password=password)
+    test_obj = sut.new_session(username, password)
     try:
         test_obj.login(auth="session")
         test_list = redfish_utilities.get_users(test_obj)
@@ -400,7 +416,7 @@ def acc_test_credential_check(sut: SystemUnderTest, user_added: bool, username: 
     # Log in with the new user, but with bad credentials
     operation = "Logging in as '{}', but with the incorrect password".format(username)
     logger.logger.info(operation)
-    test_obj = redfish.redfish_client(base_url=sut.rhost, username=username, password=password + "ExtraStuff")
+    test_obj = sut.new_session(username, password + "ExtraStuff")
     try:
         test_obj.login(auth="session")
         test_list = redfish_utilities.get_users(test_obj)

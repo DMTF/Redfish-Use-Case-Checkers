@@ -2,10 +2,153 @@
 # Copyright 2017-2025 Distributed Management Task Force, Inc. All rights reserved.
 # License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-Use-Case-Checkers/blob/main/LICENSE.md
 
+import json
+import time
+from urllib.parse import urljoin
+
 import redfish
 import redfish_utilities
 
 from redfish_use_case_checkers import logger
+
+
+class _CapturedSession(object):
+    """Proxy Redfish calls so reports can show the exchange behind a result."""
+
+    _METHODS = ("get", "post", "patch", "put", "delete", "head")
+
+    def __init__(self, client, sut):
+        self._client = client
+        self._sut = sut
+
+    def __getattr__(self, name):
+        attribute = getattr(self._client, name)
+        if name not in self._METHODS or not callable(attribute):
+            return attribute
+
+        def call(*args, **kwargs):
+            exchange = self._request(name, args, kwargs)
+            self._sut._api_call_count += 1
+            logger.log_api_call(exchange)
+            started_at = time.monotonic()
+            try:
+                response = attribute(*args, **kwargs)
+                exchange["Response"] = self._response_data(
+                    response, (time.monotonic() - started_at) * 1000
+                )
+                return response
+            except Exception as err:
+                exchange["Error"] = str(err)
+                raise
+            finally:
+                self._sut._last_exchange = exchange
+                self._sut._exchange_history.append(exchange)
+
+        return call
+
+    def _request(self, method, args, kwargs):
+        uri = kwargs.get("path") or kwargs.get("uri")
+        if uri is None and args:
+            uri = args[0]
+        body = kwargs.get("body") or kwargs.get("payload")
+        if body is None and method in ("post", "patch", "put") and len(args) > 1:
+            body = args[1]
+        headers = kwargs.get("headers") or {}
+        request_headers = {str(key): self._safe_value(key, value) for key, value in headers.items()}
+        request_headers.setdefault("Accept", "application/json")
+        request_headers.setdefault("content-type", None)
+        request_headers.setdefault("Authorization", "********")
+        return {
+            "method": method.upper(),
+            "url": urljoin(self._sut.rhost.rstrip("/") + "/", str(uri or "")),
+            "headers": request_headers,
+            "data": self._json_value(body),
+        }
+
+    @staticmethod
+    def _safe_value(key, value):
+        key_name = str(key).lower().replace("_", "-")
+        if (
+            key_name in ("authorization", "x-auth-token", "password", "token", "access-token")
+            or "token" in key_name
+            or "secret" in key_name
+        ):
+            return "********"
+        return value
+
+    @classmethod
+    def _json_value(cls, value):
+        if isinstance(value, dict):
+            return {
+                str(key): cls._safe_value(key, cls._json_value(item))
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [cls._json_value(item) for item in value]
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        try:
+            json.dumps(value)
+            return value
+        except (TypeError, ValueError):
+            return str(value)
+
+    @classmethod
+    def _response_data(cls, response, response_time_ms=None):
+        response_headers = getattr(response, "headers", None)
+        if not response_headers and hasattr(response, "getheaders"):
+            response_headers = response.getheaders()
+        response_headers = response_headers or {}
+        if hasattr(response_headers, "items"):
+            response_headers = {
+                str(key).lower(): cls._safe_value(key, value)
+                for key, value in response_headers.items()
+            }
+        elif isinstance(response_headers, (list, tuple)):
+            response_headers = {
+                str(key).lower(): cls._safe_value(key, value)
+                for key, value in response_headers
+            }
+        data = getattr(response, "dict", None)
+        if data is None:
+            data = getattr(response, "json", None)
+            if callable(data):
+                try:
+                    data = data()
+                except Exception:
+                    data = None
+        body = getattr(response, "text", getattr(response, "body", None))
+        response_data = {
+            "status": getattr(response, "status", getattr(response, "status_code", None)),
+            "statusText": getattr(
+                response, "statusText", getattr(response, "status_text", getattr(response, "reason", ""))
+            ),
+            "headers": response_headers,
+            "data": cls._json_value(data),
+        }
+        if response_time_ms is not None:
+            response_data["response_time_ms"] = response_time_ms
+        response_data["response_size_bytes"] = cls._response_size_bytes(response_headers, data, body)
+        for field in ("url", "elapsed", "http_version", "version", "encoding"):
+            value = getattr(response, field, None)
+            if value is not None:
+                response_data[field] = cls._json_value(value)
+        if body is not None and data is None:
+            response_data["body"] = cls._json_value(body)
+        return response_data
+
+    @staticmethod
+    def _response_size_bytes(headers, data, body):
+        content_length = headers.get("content-length") if isinstance(headers, dict) else None
+        try:
+            return int(content_length)
+        except (TypeError, ValueError):
+            pass
+        if body is not None:
+            return len(str(body).encode("utf-8"))
+        if data is not None:
+            return len(json.dumps(data, default=str).encode("utf-8"))
+        return 0
 
 
 class SystemUnderTest(object):
@@ -27,6 +170,10 @@ class SystemUnderTest(object):
         )
         self._redfish_obj.login(auth="session")
         self._service_root = self._redfish_obj.root_resp.dict
+        self._last_exchange = None
+        self._exchange_history = []
+        self._api_call_count = 0
+        self._captured_session = _CapturedSession(self._redfish_obj, self)
         self._results = []
         self._pass_count = 0
         self._warn_count = 0
@@ -118,7 +265,18 @@ class SystemUnderTest(object):
         Returns:
             The Redfish client object
         """
-        return self._redfish_obj
+        return self._captured_session
+
+    def new_session(self, username, password):
+        """Creates a separately authenticated client using the shared capture proxy."""
+        client = redfish.redfish_client(
+            base_url=self._rhost,
+            username=username,
+            password=password,
+            timeout=15,
+            max_retry=3,
+        )
+        return _CapturedSession(client, self)
 
     @property
     def service_root(self):
@@ -175,6 +333,7 @@ class SystemUnderTest(object):
         Logs out of the Redfish service
         """
         self._redfish_obj.logout()
+        print("Total API calls: {}".format(self._api_call_count), flush=True)
 
     def add_results_category(self, category, tests):
         """
@@ -204,7 +363,15 @@ class SystemUnderTest(object):
             if category["Category"] == category_name:
                 for test in category["Tests"]:
                     if test["Name"] == test_name:
-                        test["Results"].append({"Operation": operation, "Result": result, "Message": msg})
+                        exchanges = list(self._exchange_history)
+                        self._exchange_history.clear()
+                        test["Results"].append({
+                            "Operation": operation,
+                            "Result": result,
+                            "Message": msg,
+                            "Exchange": exchanges[-1] if exchanges else None,
+                            "Exchanges": exchanges,
+                        })
                         if result == "PASS":
                             self._pass_count += 1
                         elif result == "WARN" or (result == "FAILWARN" and self._relaxed is True):

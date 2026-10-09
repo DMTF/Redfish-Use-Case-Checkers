@@ -24,7 +24,7 @@ setup(
     ],
     keywords="Redfish",
     url="https://github.com/DMTF/Redfish-Use-Case-Checkers",
-    packages=["redfish_use_case_checkers"],
+    packages=["redfish_use_case_checkers", "redfish_use_case_checkers.sub_use_cases"],
     entry_points={"console_scripts": ["rf_use_case_checkers=redfish_use_case_checkers.console_scripts:main"]},
     install_requires=["colorama", "redfish>=3.0.0", "redfish_utilities>=3.4.3", "redfish_service_validator>=3.1.6"],
 )
